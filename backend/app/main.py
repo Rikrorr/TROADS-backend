@@ -1,34 +1,27 @@
+# app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import nodes, edges, graph
-from app.database import engine
-from app.models import node, edge, label  # 导入模型以创建表
+from .database import engine, Base
+from .routers import projects, chat
 
-# 创建数据库表
-node.Base.metadata.create_all(bind=engine)
-edge.Base.metadata.create_all(bind=engine)
-label.Base.metadata.create_all(bind=engine)
+# 创建数据库表 (在生产环境中应该使用 Alembic 迁移)
+Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
-    title="Troads Graph API",
-    description="API for managing graph nodes, edges and labels for the Troads visual conversation editor",
-    version="1.0.0"
-)
+app = FastAPI(title="T-Roads Backend")
 
-# 允许跨域请求（前端开发时需要）
+# 配置 CORS，允许前端访问
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 在生产环境中应限制为特定域名
+    allow_origins=["http://localhost:5173"], # Vite 默认端口
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 包含路由
-app.include_router(nodes.router)
-app.include_router(edges.router)
-app.include_router(graph.router)
+# 注册路由
+app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
+app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to Troads Graph API"}
+    return {"message": "Welcome to T-Roads API"}
